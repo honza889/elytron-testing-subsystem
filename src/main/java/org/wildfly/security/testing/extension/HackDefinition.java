@@ -1,6 +1,7 @@
 package org.wildfly.security.testing.extension;
 
 import org.jboss.as.controller.*;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -21,20 +22,14 @@ public class HackDefinition extends SimpleResourceDefinition {
     private static final Logger log = Logger.getLogger(HackDefinition.class);
 
     protected static final SimpleAttributeDefinition OBTAINED =
-            new SimpleAttributeDefinitionBuilder("obtained", ModelType.STRING)
-                    .setAllowExpression(true)
-                    .setXmlName("obtained")
-                    .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
-                    .setDefaultValue(null)
-                    .setAllowNull(false)
-                    .build();
+            new SimpleAttributeDefinitionBuilder("obtained", ModelType.STRING, true).build();
 
     private HackDefinition() {
-        super(PathElement.pathElement("hack"), SubsystemExtension.getResourceDescriptionResolver("obtained"), HackAdd.INSTANCE, HackRemove.INSTANCE);
+        super(PathElement.pathElement("hack"), SubsystemExtension.getResourceDescriptionResolver("hack"), HackAdd.INSTANCE, HackRemove.INSTANCE);
     }
 
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerReadWriteAttribute(OBTAINED, null, HackWriteAttribute.INSTANCE);
+        resourceRegistration.registerReadWriteAttribute(OBTAINED, HackReadAttribute.INSTANCE, HackWriteAttribute.INSTANCE);
     }
 
     static class HackAdd extends AbstractAddStepHandler {
@@ -60,6 +55,19 @@ public class HackDefinition extends SimpleResourceDefinition {
 
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model)
                 throws OperationFailedException {
+        }
+    }
+
+    static class HackReadAttribute implements OperationStepHandler {
+
+        public static final HackReadAttribute INSTANCE = new HackReadAttribute();
+
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            final String opName = operation.require(ModelDescriptionConstants.OP).asString();
+
+            context.getResult().set("holahej");
+
         }
     }
 

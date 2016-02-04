@@ -17,18 +17,6 @@ public class SubsystemDefinition extends SimpleResourceDefinition {
 
     public static final SubsystemDefinition INSTANCE = new SubsystemDefinition();
 
-    protected static final SimpleAttributeDefinition OBTAINED =
-            new SimpleAttributeDefinitionBuilder("obtained", ModelType.STRING)
-                    .setAllowExpression(true).setXmlName("obtained").setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
-                    .setDefaultValue(null).setAllowNull(true).setValidator(new ParameterValidator() {
-                public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
-
-                }
-                public void validateResolvedParameter(String parameterName, ModelNode value) throws OperationFailedException {
-
-                }
-            }).build();
-
     private SubsystemDefinition() {
         super(SubsystemExtension.SUBSYSTEM_PATH,
                 SubsystemExtension.getResourceDescriptionResolver(null),
@@ -44,7 +32,7 @@ public class SubsystemDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-
+        resourceRegistration.registerSubModel(HackDefinition.INSTANCE);
     }
 
     static class SubsystemAdd extends AbstractBoottimeAddStepHandler {
@@ -58,7 +46,7 @@ public class SubsystemDefinition extends SimpleResourceDefinition {
         @Override
         protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
             //model.get("type").setEmptyObject(); //Initialize the 'type' child node
-            OBTAINED.validateAndSet(operation, model);
+            //OBTAINED.validateAndSet(operation, model);
         }
 
         @Override

@@ -1,4 +1,4 @@
-<module xmlns="urn:jboss:module:1.0" name="module1">
+<module xmlns="urn:jboss:module:1.0" name="org.wildfly.security.elytron-test">
     <resources>
         <resource-root path="elytron-testing-subsystem.jar"/>
     </resources>
