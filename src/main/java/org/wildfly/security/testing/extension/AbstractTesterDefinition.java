@@ -23,6 +23,8 @@ import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 
+import java.security.KeyStoreException;
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 /**
@@ -89,10 +91,16 @@ abstract class AbstractTesterDefinition extends SimpleResourceDefinition {
         protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
             String nodeName = operation.get(OP_ADDR).asList().get(operation.get(OP_ADDR).asList().size()-1).get(TYPE).asString();
             ModelNode attributes = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
-            test(nodeName, attributes, context, operation);
+            try {
+                test(nodeName, attributes, context, operation);
+            } catch (OperationFailedException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new OperationFailedException("Test failed", e);
+            }
         }
 
-        protected abstract void test(String nodeName, ModelNode nodeAttributes, OperationContext context, ModelNode operation);
+        protected abstract void test(String nodeName, ModelNode nodeAttributes, OperationContext context, ModelNode operation) throws Exception;
 
     }
 }

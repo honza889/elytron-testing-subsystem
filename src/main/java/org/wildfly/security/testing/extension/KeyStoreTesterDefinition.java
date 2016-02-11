@@ -23,9 +23,12 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
+import org.wildfly.common.Assert;
 
 import java.security.KeyStore;
+import java.security.KeyStoreException;
 
 /**
  * @author <a href="mailto:jkalina@redhat.com">Jan Kalina</a>
@@ -47,26 +50,78 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
                     .setCapabilityReference("org.wildfly.security.keystore", KEY_STORE_RUNTIME_CAPABILITY)
                     .build();
 
+    protected static final SimpleAttributeDefinition ALIAS =
+            new SimpleAttributeDefinitionBuilder("alias", ModelType.STRING, true)
+                    .build();
+
+    protected static final SimpleAttributeDefinition PASSWORD =
+            new SimpleAttributeDefinitionBuilder("password", ModelType.STRING, true)
+                    .build();
+
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadWriteAttribute(NAME, null, BlankWriteAttributeHandler.INSTANCE);
+        resourceRegistration.registerReadWriteAttribute(ALIAS, null, BlankWriteAttributeHandler.INSTANCE);
+        resourceRegistration.registerReadWriteAttribute(PASSWORD, null, BlankWriteAttributeHandler.INSTANCE);
     }
 
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
 
-        registerTest(resourceRegistration, "readKeyStore", new TestingOperationHandler() {
-            protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) {
+        registerTest(resourceRegistration, "testExists", new TestingOperationHandler() {
+            protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) throws Exception {
+                if(!attributes.get(NAME.getName()).isDefined()) {
+                    throw new OperationFailedException("Attribute is null!");
+                }
 
-                System.out.println(attributes.toJSONString(false));
+                ServiceName serviceName = KeyStoreTesterDefinition.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(attributes.get(NAME.getName()).asString());
+                ServiceController serviceController = context.getServiceRegistry(false).getService(serviceName);
 
-                ServiceName serviceName = KeyStoreTesterDefinition.KEY_STORE_RUNTIME_CAPABILITY
-                        .getCapabilityServiceName(attributes.get(NAME.getName()).asString());
+                context.getResult().set(serviceController != null);
+            }
+        });
 
+        registerTest(resourceRegistration, "testContains", new TestingOperationHandler() {
+            protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) throws Exception {
+                if(!attributes.get(NAME.getName()).isDefined() || !attributes.get(ALIAS.getName()).isDefined()) {
+                    throw new OperationFailedException("Attribute is null!");
+                }
+
+                ServiceName serviceName = KeyStoreTesterDefinition.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(attributes.get(NAME.getName()).asString());
                 KeyStore keyStore = (KeyStore) context.getServiceRegistry(false).getService(serviceName).getValue();
 
-                context.getResult().set(keyStore.toString());
+                context.getResult().set("keyStore", keyStore.toString());
+                context.getResult().set("contains", keyStore.containsAlias(attributes.get(ALIAS.getName()).asString()));
+            }
+        });
 
+        registerTest(resourceRegistration, "testGetKey", new TestingOperationHandler() {
+            protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) throws Exception {
+                if(!attributes.get(NAME.getName()).isDefined() || !attributes.get(ALIAS.getName()).isDefined() || !attributes.get(PASSWORD.getName()).isDefined()) {
+                    throw new OperationFailedException("Attribute is null!");
+                }
+
+                ServiceName serviceName = KeyStoreTesterDefinition.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(attributes.get(NAME.getName()).asString());
+                KeyStore keyStore = (KeyStore) context.getServiceRegistry(false).getService(serviceName).getValue();
+
+                context.getResult().set("keyStore", keyStore.toString());
+                context.getResult().set("contains", keyStore.containsAlias(attributes.get(ALIAS.getName()).asString()));
+                context.getResult().set("key", keyStore.getKey(attributes.get(ALIAS.getName()).asString(), attributes.get(PASSWORD.getName()).asString().toCharArray()).toString());
+            }
+        });
+
+        registerTest(resourceRegistration, "testGetCertificate", new TestingOperationHandler() {
+            protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) throws Exception {
+                if(!attributes.get(NAME.getName()).isDefined() || !attributes.get(ALIAS.getName()).isDefined()) {
+                    throw new OperationFailedException("Attribute is null!");
+                }
+
+                ServiceName serviceName = KeyStoreTesterDefinition.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(attributes.get(NAME.getName()).asString());
+                KeyStore keyStore = (KeyStore) context.getServiceRegistry(false).getService(serviceName).getValue();
+
+                context.getResult().set("keyStore", keyStore.toString());
+                context.getResult().set("contains", keyStore.containsAlias(attributes.get(ALIAS.getName()).asString()));
+                context.getResult().set("certificate", keyStore.getCertificate(attributes.get(ALIAS.getName()).asString()).toString());
             }
         });
 

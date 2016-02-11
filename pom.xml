@@ -22,11 +22,6 @@
   --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- parent>
-        <groupId>org.jboss.as</groupId>
-        <artifactId>jboss-as-parent</artifactId>
-    </parent -->
-
     <groupId>org.wildfly.security.testing</groupId>
     <artifactId>elytron-testing-subsystem</artifactId>
     <version>1.0-SNAPSHOT</version>
@@ -196,12 +191,18 @@
             <version>${version.org.jboss.staxmapper}</version>
             <scope>provided</scope>
         </dependency>
-         <!--
         <dependency>
-            <groupId>org.wildfly.security</groupId>
-            <artifactId>elytron-subsystem</artifactId>
-            <version>${version.elytron-subsystem}</version>
+            <groupId>org.wildfly</groupId>
+            <artifactId>wildfly-cli</artifactId>
+            <version>8.2.1.Final</version>
+            <scope>test</scope>
         </dependency>
-        -->
+        <!--
+       <dependency>
+           <groupId>org.wildfly.security</groupId>
+           <artifactId>elytron-subsystem</artifactId>
+           <version>${version.elytron-subsystem}</version>
+       </dependency>
+       -->
     </dependencies>
 </project>
