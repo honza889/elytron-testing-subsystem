@@ -96,7 +96,8 @@ abstract class AbstractTesterDefinition extends SimpleResourceDefinition {
             } catch (OperationFailedException e) {
                 throw e;
             } catch (Exception e) {
-                throw new OperationFailedException("Test failed", e);
+                e.printStackTrace();
+                throw new OperationFailedException("Testing operation failed: "+e.getMessage(), e);
             }
         }
 

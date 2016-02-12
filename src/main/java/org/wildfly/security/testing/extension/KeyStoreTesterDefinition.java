@@ -29,6 +29,9 @@ import org.wildfly.common.Assert;
 
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.cert.Certificate;
+import java.util.Arrays;
+import java.util.Enumeration;
 
 /**
  * @author <a href="mailto:jkalina@redhat.com">Jan Kalina</a>
@@ -81,6 +84,22 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
             }
         });
 
+        registerTest(resourceRegistration, "testAliases", new TestingOperationHandler() {
+            protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) throws Exception {
+                if(!attributes.get(NAME.getName()).isDefined()) {
+                    throw new OperationFailedException("Attribute is null!");
+                }
+
+                ServiceName serviceName = KeyStoreTesterDefinition.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(attributes.get(NAME.getName()).asString());
+                KeyStore keyStore = (KeyStore) context.getServiceRegistry(false).getService(serviceName).getValue();
+
+                Enumeration<String> aliases = keyStore.aliases();
+                while(aliases.hasMoreElements()) {
+                    context.getResult().add(aliases.nextElement());
+                }
+            }
+        });
+
         registerTest(resourceRegistration, "testContains", new TestingOperationHandler() {
             protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) throws Exception {
                 if(!attributes.get(NAME.getName()).isDefined() || !attributes.get(ALIAS.getName()).isDefined()) {
@@ -90,8 +109,8 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
                 ServiceName serviceName = KeyStoreTesterDefinition.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(attributes.get(NAME.getName()).asString());
                 KeyStore keyStore = (KeyStore) context.getServiceRegistry(false).getService(serviceName).getValue();
 
-                context.getResult().set("keyStore", keyStore.toString());
-                context.getResult().set("contains", keyStore.containsAlias(attributes.get(ALIAS.getName()).asString()));
+                context.getResult().get("keyStore").set(keyStore.toString());
+                context.getResult().get("contains").set(keyStore.containsAlias(attributes.get(ALIAS.getName()).asString()));
             }
         });
 
@@ -104,9 +123,9 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
                 ServiceName serviceName = KeyStoreTesterDefinition.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(attributes.get(NAME.getName()).asString());
                 KeyStore keyStore = (KeyStore) context.getServiceRegistry(false).getService(serviceName).getValue();
 
-                context.getResult().set("keyStore", keyStore.toString());
-                context.getResult().set("contains", keyStore.containsAlias(attributes.get(ALIAS.getName()).asString()));
-                context.getResult().set("key", keyStore.getKey(attributes.get(ALIAS.getName()).asString(), attributes.get(PASSWORD.getName()).asString().toCharArray()).toString());
+                context.getResult().get("keyStore").set(keyStore.toString());
+                context.getResult().get("contains").set(keyStore.containsAlias(attributes.get(ALIAS.getName()).asString()));
+                context.getResult().get("key").set(keyStore.getKey(attributes.get(ALIAS.getName()).asString(), attributes.get(PASSWORD.getName()).asString().toCharArray()).toString());
             }
         });
 
@@ -115,13 +134,22 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
                 if(!attributes.get(NAME.getName()).isDefined() || !attributes.get(ALIAS.getName()).isDefined()) {
                     throw new OperationFailedException("Attribute is null!");
                 }
+                String alias = attributes.get(ALIAS.getName()).asString();
 
                 ServiceName serviceName = KeyStoreTesterDefinition.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(attributes.get(NAME.getName()).asString());
                 KeyStore keyStore = (KeyStore) context.getServiceRegistry(false).getService(serviceName).getValue();
 
-                context.getResult().set("keyStore", keyStore.toString());
-                context.getResult().set("contains", keyStore.containsAlias(attributes.get(ALIAS.getName()).asString()));
-                context.getResult().set("certificate", keyStore.getCertificate(attributes.get(ALIAS.getName()).asString()).toString());
+                context.getResult().get("keyStore").set(keyStore.toString());
+
+                ModelNode list = new ModelNode();
+                for (Certificate c : keyStore.getCertificateChain(alias)) {
+                    list.add(c.toString());
+                }
+                context.getResult().get("certificateChain").set(list);
+
+
+                context.getResult().get("contains").set(keyStore.containsAlias(alias));
+                context.getResult().get("certificate").set(keyStore.getCertificate(alias).toString());
             }
         });
 

@@ -18,17 +18,12 @@
 
 package org.wildfly.security.testing;
 
-import org.jboss.as.cli.scriptsupport.CLI;
 import org.jboss.dmr.ModelNode;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.UnknownHostException;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Test of KeyStores
@@ -38,74 +33,68 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
  *
  * @author <a href="mailto:jkalina@redhat.com">Jan Kalina</a>
  */
-public class KeyStoreTest {
-
-    protected CLI cli;
-
-    protected ModelNode cmdAssert(String command) {
-        ModelNode response = cli.cmd(command).getResponse();
-        if(!response.get(OUTCOME).asString().equals(SUCCESS)){
-            Assert.fail(command + response.toJSONString(false));
-        }
-        return response.get(RESULT);
-    }
-
-    protected ModelNode cmdIgnore(String command) {
-        return cli.cmd(command).getResponse().get(RESULT);
-    }
-
-    @Before
-    public void init() throws UnknownHostException {
-        cli = CLI.newInstance();
-        cli.connect();
-        cmdIgnore("/subsystem=elytron-testing:remove{allow-resource-service-restart=true}");
-        cmdIgnore("/extension=org.wildfly.security.elytron-test:remove{allow-resource-service-restart=true}");
-        cmdIgnore("/extension=org.wildfly.security.elytron-test:add");
-        cmdIgnore("/subsystem=elytron-testing:add");
-        System.out.println("connected");
-    }
-
-    @After
-    public void destroy() throws IOException {
-        cli.disconnect();
-        System.out.println("disconnected");
-    }
+public class KeyStoreTest extends AbstractTest {
 
     @Test
-    public void testKeyStoreCreateExists() throws Exception {
+    public void testKeyStoreCreateJks() throws Exception {
         cmdIgnore("/subsystem=elytron-testing/keystoretester=KeyStoreCreated/:add");
         cmdIgnore("/subsystem=elytron-testing/keystoretester=KeyStoreCreated/:write-attribute(name=name,value=KeyStoreCreated)");
         cmdIgnore("/subsystem=elytron/keystore=KeyStoreCreated/:remove{allow-resource-service-restart=true}");
 
         Assert.assertFalse(cmdAssert("/subsystem=elytron-testing/keystoretester=KeyStoreCreated/:testExists").asBoolean());
 
-        cmdIgnore("/subsystem=elytron/keystore=KeyStoreCreated/:add(type=JKS,password=123456,path=clientkeystore,relative-to=jboss.server.config.dir)");
+        cmdIgnore("/subsystem=elytron/keystore=KeyStoreCreated/:add(type=JKS,password=123456,path=testingCaJks.keystore,relative-to=elytron.testing.resources)");
 
         Assert.assertTrue(cmdAssert("/subsystem=elytron-testing/keystoretester=KeyStoreCreated/:testExists").asBoolean());
     }
 
     @Test
     public void testKeyStoreRemoving() throws Exception {
-        cmdIgnore("/subsystem=elytron-testing/keystoretester=KeyStoreCreated/:add");
-        cmdIgnore("/subsystem=elytron-testing/keystoretester=KeyStoreCreated/:write-attribute(name=name,value=KeyStoreCreated)");
+        cmdIgnore("/subsystem=elytron-testing/keystoretester=KeyStoreRemoving/:add");
+        cmdIgnore("/subsystem=elytron-testing/keystoretester=KeyStoreRemoving/:write-attribute(name=name,value=KeyStoreRemoving)");
 
-        cmdIgnore("/subsystem=elytron/keystore=KeyStoreRemoving/:add(type=JKS,password=123456,path=clientkeystore,relative-to=jboss.server.config.dir)");
+        cmdIgnore("/subsystem=elytron/keystore=KeyStoreRemoving/:add(type=JKS,password=123456,path=testingCaJks.keystore,relative-to=elytron.testing.resources)");
+
+        Assert.assertTrue(cmdAssert("/subsystem=elytron-testing/keystoretester=KeyStoreRemoving/:testExists").asBoolean());
 
         cmdIgnore("/subsystem=elytron/keystore=KeyStoreRemoving/:remove{allow-resource-service-restart=true}");
 
-        cmdAssert("/subsystem=elytron/keystore=KeyStoreRemoving/:add(type=JKS,password=123456,path=clientkeystore,relative-to=jboss.server.config.dir)");
+        Assert.assertFalse(cmdAssert("/subsystem=elytron-testing/keystoretester=KeyStoreRemoving/:testExists").asBoolean());
+
+        cmdAssert("/subsystem=elytron/keystore=KeyStoreRemoving/:add(type=JKS,password=123456,path=testingCaJks.keystore,relative-to=elytron.testing.resources)");
+    }
+
+    @Test
+    public void testJksKeyStoreAliases() throws Exception {
+        cmdIgnore("/subsystem=elytron/keystore=KeyStore1/:remove{allow-resource-service-restart=true}");
+        cmdAssert("/subsystem=elytron/keystore=KeyStore1/:add(type=JKS,password=123456,path=testingCaJks.keystore,relative-to=elytron.testing.resources)");
+        cmdAssert("/subsystem=elytron-testing/keystoretester=testKeyStore/:add");
+        cmdIgnore("/subsystem=elytron-testing/keystoretester=testKeyStore/:write-attribute(name=name,value=KeyStore1)");
+
+        List<String> aliases = new ArrayList();
+        ModelNode result = cmdAssert("/subsystem=elytron-testing/keystoretester=testKeyStore/:testAliases");
+        for(ModelNode alias : result.asList()) aliases.add(alias.asString());
+
+        Assert.assertTrue(aliases.contains("testingserver"));
+        Assert.assertTrue(aliases.contains("testingca"));
     }
 
     @Test
     public void testJksKeyStoreContains() throws Exception {
         cmdIgnore("/subsystem=elytron/keystore=KeyStore1/:remove{allow-resource-service-restart=true}");
-        cmdAssert("/subsystem=elytron/keystore=KeyStore1/:add(type=JKS,password=123456,path=clientkeystore,relative-to=jboss.server.config.dir)");
+        cmdAssert("/subsystem=elytron/keystore=KeyStore1/:add(type=JKS,password=123456,path=testingCaJks.keystore,relative-to=elytron.testing.resources)");
         cmdAssert("/subsystem=elytron-testing/keystoretester=testKeyStore/:add");
         cmdIgnore("/subsystem=elytron-testing/keystoretester=testKeyStore/:write-attribute(name=name,value=KeyStore1)");
-        cmdIgnore("/subsystem=elytron-testing/keystoretester=testKeyStore/:write-attribute(name=alias,value=client)");
+        cmdIgnore("/subsystem=elytron-testing/keystoretester=testKeyStore/:write-attribute(name=alias,value=testingserver)");
 
-        ModelNode result = cmdAssert("/subsystem=elytron-testing/keystoretester=testKeyStore/:testContains");
-        Assert.assertTrue(result.get("contains").asBoolean());
+        ModelNode result = cmdAssert("/subsystem=elytron-testing/keystoretester=testKeyStore/:testContains"); // REMOVE
+        System.out.println(result.toJSONString(false));
+
+        Assert.assertTrue(cmdAssert("/subsystem=elytron-testing/keystoretester=testKeyStore/:testContains").get("contains").asBoolean());
+
+        cmdIgnore("/subsystem=elytron-testing/keystoretester=testKeyStore/:write-attribute(name=alias,value=nonexisting)");
+
+        Assert.assertFalse(cmdAssert("/subsystem=elytron-testing/keystoretester=testKeyStore/:testContains").get("contains").asBoolean());
     }
 
     // TODO testGetKey
@@ -113,14 +102,20 @@ public class KeyStoreTest {
     @Test
     public void testJksKeyStoreCertificate() throws Exception {
         cmdIgnore("/subsystem=elytron/keystore=KeyStore1/:remove{allow-resource-service-restart=true}");
-        cmdAssert("/subsystem=elytron/keystore=KeyStore1/:add(type=JKS,password=123456,path=clientkeystore,relative-to=jboss.server.config.dir)");
+        cmdAssert("/subsystem=elytron/keystore=KeyStore1/:add(type=JKS,password=123456,path=testingCaJks.keystore,relative-to=elytron.testing.resources)");
         cmdAssert("/subsystem=elytron-testing/keystoretester=testKeyStore/:add");
         cmdIgnore("/subsystem=elytron-testing/keystoretester=testKeyStore/:write-attribute(name=name,value=KeyStore1)");
-        cmdIgnore("/subsystem=elytron-testing/keystoretester=testKeyStore/:write-attribute(name=alias,value=client)");
+        cmdIgnore("/subsystem=elytron-testing/keystoretester=testKeyStore/:write-attribute(name=alias,value=testingserver)");
         cmdIgnore("/subsystem=elytron-testing/keystoretester=testKeyStore/:write-attribute(name=password,value=123456)");
 
         ModelNode result = cmdAssert("/subsystem=elytron-testing/keystoretester=testKeyStore/:testGetCertificate");
-        System.out.println(result.get("certificate").asString());
+        System.out.println(result.toJSONString(false));
+        Assert.assertTrue(result.get("contains").asBoolean());
+        Assert.assertTrue(result.get("certificate").asString().contains("CN=Testing server"));
+        Assert.assertEquals(2, result.get("certificateChain").asList().size());
     }
+
+    // TODO store
+    // TODO non-JKS
 
 }
