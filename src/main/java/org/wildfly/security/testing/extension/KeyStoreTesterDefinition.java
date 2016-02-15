@@ -27,9 +27,11 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.common.Assert;
 
+import java.io.FileInputStream;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 import java.util.Arrays;
 import java.util.Enumeration;
 
@@ -57,6 +59,10 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
             new SimpleAttributeDefinitionBuilder("alias", ModelType.STRING, true)
                     .build();
 
+    protected static final SimpleAttributeDefinition FILE =
+            new SimpleAttributeDefinitionBuilder("file", ModelType.STRING, true)
+                    .build();
+
     protected static final SimpleAttributeDefinition PASSWORD =
             new SimpleAttributeDefinitionBuilder("password", ModelType.STRING, true)
                     .build();
@@ -64,6 +70,7 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadWriteAttribute(NAME, null, BlankWriteAttributeHandler.INSTANCE);
         resourceRegistration.registerReadWriteAttribute(ALIAS, null, BlankWriteAttributeHandler.INSTANCE);
+        resourceRegistration.registerReadWriteAttribute(FILE, null, BlankWriteAttributeHandler.INSTANCE);
         resourceRegistration.registerReadWriteAttribute(PASSWORD, null, BlankWriteAttributeHandler.INSTANCE);
     }
 
@@ -71,7 +78,7 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
 
-        registerTest(resourceRegistration, "testExists", new TestingOperationHandler() {
+        registerTest(resourceRegistration, "serviceExists", new TestingOperationHandler() {
             protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) throws Exception {
                 if(!attributes.get(NAME.getName()).isDefined()) {
                     throw new OperationFailedException("Attribute is null!");
@@ -84,7 +91,7 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
             }
         });
 
-        registerTest(resourceRegistration, "testAliases", new TestingOperationHandler() {
+        registerTest(resourceRegistration, "getAliases", new TestingOperationHandler() {
             protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) throws Exception {
                 if(!attributes.get(NAME.getName()).isDefined()) {
                     throw new OperationFailedException("Attribute is null!");
@@ -100,7 +107,7 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
             }
         });
 
-        registerTest(resourceRegistration, "testContains", new TestingOperationHandler() {
+        registerTest(resourceRegistration, "containsAlias", new TestingOperationHandler() {
             protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) throws Exception {
                 if(!attributes.get(NAME.getName()).isDefined() || !attributes.get(ALIAS.getName()).isDefined()) {
                     throw new OperationFailedException("Attribute is null!");
@@ -114,7 +121,7 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
             }
         });
 
-        registerTest(resourceRegistration, "testGetKey", new TestingOperationHandler() {
+        registerTest(resourceRegistration, "getKey", new TestingOperationHandler() {
             protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) throws Exception {
                 if(!attributes.get(NAME.getName()).isDefined() || !attributes.get(ALIAS.getName()).isDefined() || !attributes.get(PASSWORD.getName()).isDefined()) {
                     throw new OperationFailedException("Attribute is null!");
@@ -129,7 +136,7 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
             }
         });
 
-        registerTest(resourceRegistration, "testGetCertificate", new TestingOperationHandler() {
+        registerTest(resourceRegistration, "getCertificate", new TestingOperationHandler() {
             protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) throws Exception {
                 if(!attributes.get(NAME.getName()).isDefined() || !attributes.get(ALIAS.getName()).isDefined()) {
                     throw new OperationFailedException("Attribute is null!");
@@ -146,8 +153,6 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
                     list.add(c.toString());
                 }
                 context.getResult().get("certificateChain").set(list);
-
-
                 context.getResult().get("contains").set(keyStore.containsAlias(alias));
                 context.getResult().get("certificate").set(keyStore.getCertificate(alias).toString());
             }
