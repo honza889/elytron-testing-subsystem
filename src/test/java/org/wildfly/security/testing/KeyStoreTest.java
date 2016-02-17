@@ -37,15 +37,15 @@ import java.util.List;
 public class KeyStoreTest extends AbstractTest {
 
     @Test
-    public void testKeyStoreCreate() throws Exception {
-        cmdIgnore("/subsystem=elytron-testing/keystoretester=KeyStoreCreate/:add");
-        cmdIgnore("/subsystem=elytron/keystore=KeyStoreCreate/:remove{allow-resource-service-restart=true}");
+    public void testKeyStoreAdd() throws Exception {
+        cmdIgnore("/subsystem=elytron-testing/keystoretester=KeyStoreAdd/:add");
+        cmdIgnore("/subsystem=elytron/keystore=KeyStoreAdd/:remove{allow-resource-service-restart=true}");
 
-        cmdIgnore("/subsystem=elytron-testing/keystoretester=KeyStoreCreate/:write-attribute(name=name,value=KeyStoreCreate)");
-        Assert.assertFalse(cmdAssert("/subsystem=elytron-testing/keystoretester=KeyStoreCreate/:serviceExists").asBoolean());
+        cmdIgnore("/subsystem=elytron-testing/keystoretester=KeyStoreAdd/:write-attribute(name=name,value=KeyStoreAdd)");
+        Assert.assertFalse(cmdAssert("/subsystem=elytron-testing/keystoretester=KeyStoreAdd/:serviceExists").asBoolean());
 
-        cmdIgnore("/subsystem=elytron/keystore=KeyStoreCreate/:add(type=JKS,password=123456,path=testingCaJks.keystore,relative-to=elytron.testing.resources)");
-        Assert.assertTrue(cmdAssert("/subsystem=elytron-testing/keystoretester=KeyStoreCreate/:serviceExists").asBoolean());
+        cmdIgnore("/subsystem=elytron/keystore=KeyStoreAdd/:add(type=JKS,password=123456,path=testingCaJks.keystore,relative-to=elytron.testing.resources)");
+        Assert.assertTrue(cmdAssert("/subsystem=elytron-testing/keystoretester=KeyStoreAdd/:serviceExists").asBoolean());
     }
 
     @Test

@@ -81,7 +81,7 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
         registerTest(resourceRegistration, "serviceExists", new TestingOperationHandler() {
             protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) throws Exception {
                 if(!attributes.get(NAME.getName()).isDefined()) {
-                    throw new OperationFailedException("Attribute is null!");
+                    throw new OperationFailedException("Attribute is not defined");
                 }
 
                 ServiceName serviceName = KeyStoreTesterDefinition.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(attributes.get(NAME.getName()).asString());
@@ -94,7 +94,7 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
         registerTest(resourceRegistration, "getAliases", new TestingOperationHandler() {
             protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) throws Exception {
                 if(!attributes.get(NAME.getName()).isDefined()) {
-                    throw new OperationFailedException("Attribute is null!");
+                    throw new OperationFailedException("Attribute is not defined");
                 }
 
                 ServiceName serviceName = KeyStoreTesterDefinition.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(attributes.get(NAME.getName()).asString());
@@ -110,7 +110,7 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
         registerTest(resourceRegistration, "containsAlias", new TestingOperationHandler() {
             protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) throws Exception {
                 if(!attributes.get(NAME.getName()).isDefined() || !attributes.get(ALIAS.getName()).isDefined()) {
-                    throw new OperationFailedException("Attribute is null!");
+                    throw new OperationFailedException("Attribute is not defined");
                 }
 
                 ServiceName serviceName = KeyStoreTesterDefinition.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(attributes.get(NAME.getName()).asString());
@@ -124,7 +124,7 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
         registerTest(resourceRegistration, "getKey", new TestingOperationHandler() {
             protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) throws Exception {
                 if(!attributes.get(NAME.getName()).isDefined() || !attributes.get(ALIAS.getName()).isDefined() || !attributes.get(PASSWORD.getName()).isDefined()) {
-                    throw new OperationFailedException("Attribute is null!");
+                    throw new OperationFailedException("Attribute is not defined");
                 }
 
                 ServiceName serviceName = KeyStoreTesterDefinition.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(attributes.get(NAME.getName()).asString());
@@ -139,7 +139,7 @@ public class KeyStoreTesterDefinition extends AbstractTesterDefinition {
         registerTest(resourceRegistration, "getCertificate", new TestingOperationHandler() {
             protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) throws Exception {
                 if(!attributes.get(NAME.getName()).isDefined() || !attributes.get(ALIAS.getName()).isDefined()) {
-                    throw new OperationFailedException("Attribute is null!");
+                    throw new OperationFailedException("Attribute is not defined");
                 }
                 String alias = attributes.get(ALIAS.getName()).asString();
 

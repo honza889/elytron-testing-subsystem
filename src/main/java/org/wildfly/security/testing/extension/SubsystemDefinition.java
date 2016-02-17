@@ -39,6 +39,7 @@ public class SubsystemDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerSubModel(KeyStoreTesterDefinition.INSTANCE);
+        resourceRegistration.registerSubModel(DomainTesterDefinition.INSTANCE);
     }
 
     static class SubsystemAdd extends AbstractBoottimeAddStepHandler {
