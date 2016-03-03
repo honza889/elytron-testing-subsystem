@@ -18,7 +18,10 @@
 
 package org.wildfly.security.testing.extension;
 
-import org.jboss.as.controller.*;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
@@ -26,6 +29,8 @@ import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.auth.server.ServerAuthenticationContext;
 
 /**
  * @author <a href="mailto:jkalina@redhat.com">Jan Kalina</a>
@@ -65,6 +70,29 @@ public class DomainTesterDefinition extends AbstractTesterDefinition {
                 ServiceController serviceController = context.getServiceRegistry(false).getService(serviceName);
 
                 context.getResult().set(serviceController != null);
+            }
+        });
+
+        registerTest(resourceRegistration, "testObtaining", new TestingOperationHandler() {
+            protected void test(String nodeName, ModelNode attributes, OperationContext context, ModelNode operation) throws Exception {
+                if(!attributes.get(NAME.getName()).isDefined()) {
+                    throw new OperationFailedException("Attribute name is not defined");
+                }
+
+                ServiceName serviceName = DomainTesterDefinition.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName(attributes.get(NAME.getName()).asString());
+                SecurityDomain domain = (SecurityDomain) context.getServiceRegistry(false).getService(serviceName).getValue();
+
+                ServerAuthenticationContext sac = domain.createNewAuthenticationContext();
+                context.getResult().get("newAuthenticationContext").set(sac == null ? "null" : sac.toString());
+
+                SecurityIdentity asi = domain.getAnonymousSecurityIdentity();
+                context.getResult().get("anonymousSecurityIdentity").set(asi == null ? "null" : asi.toString());
+
+                SecurityIdentity csi = domain.getCurrentSecurityIdentity();
+                context.getResult().get("currentSecurityIdentity").set(csi == null ? "null" : csi.toString());
+
+
+
             }
         });
 

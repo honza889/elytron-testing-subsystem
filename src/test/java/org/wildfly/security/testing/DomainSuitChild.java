@@ -18,6 +18,7 @@
 
 package org.wildfly.security.testing;
 
+import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -26,7 +27,7 @@ import org.junit.Test;
  *
  * @author <a href="mailto:jkalina@redhat.com">Jan Kalina</a>
  */
-public class DomainTest extends AbstractTest {
+public class DomainSuitChild extends AbstractTest {
 
     @Test
     public void testDomainAdd() throws Exception {
@@ -42,6 +43,25 @@ public class DomainTest extends AbstractTest {
         cmdAssert("/subsystem=elytron/security-domain=TestingDomain/:add(default-realm=TestingRealm1,realms=[{realm=TestingRealm1}])");
 
         Assert.assertTrue(cmdAssert("/subsystem=elytron-testing/domaintester=DomainAdd/:serviceExists").asBoolean());
+    }
+
+    @Test
+    public void testObtaining() throws Exception {
+        cmdIgnore("/subsystem=elytron/security-domain=TestingDomain/:remove{allow-resource-service-restart=true}");
+        cmdIgnore("/subsystem=elytron/properties-realm=TestingRealm1/:remove{allow-resource-service-restart=true}");
+
+        cmdIgnore("/subsystem=elytron-testing/domaintester=DomainAdd/:add");
+        cmdIgnore("/subsystem=elytron-testing/domaintester=DomainAdd/:write-attribute(name=name,value=TestingDomain)");
+
+        Assert.assertFalse(cmdAssert("/subsystem=elytron-testing/domaintester=DomainAdd/:serviceExists").asBoolean());
+
+        cmdAssert("/subsystem=elytron/properties-realm=TestingRealm1/:add(users-properties={path=testingrealm1-users.properties,relative-to=elytron.testing.resources},groups-attribute=groups,groups-properties={path=testingrealm1-groups.properties,relative-to=elytron.testing.resources})");
+        cmdAssert("/subsystem=elytron/security-domain=TestingDomain/:add(default-realm=TestingRealm1,realms=[{realm=TestingRealm1}])");
+
+        ModelNode result = cmdAssert("/subsystem=elytron-testing/domaintester=DomainAdd/:testObtaining");
+        Assert.assertTrue(result.get("newAuthenticationContext").asString().startsWith("org.wildfly.security.auth.server.ServerAuthenticationContext@"));
+        Assert.assertTrue(result.get("anonymousSecurityIdentity").asString().startsWith("org.wildfly.security.auth.server.SecurityIdentity@"));
+        Assert.assertTrue(result.get("currentSecurityIdentity").asString().startsWith("org.wildfly.security.auth.server.SecurityIdentity@"));
     }
 
 }

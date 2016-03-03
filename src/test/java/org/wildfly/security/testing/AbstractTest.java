@@ -21,8 +21,10 @@ package org.wildfly.security.testing;
 import org.jboss.as.cli.scriptsupport.CLI;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -39,28 +41,29 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
  */
 public class AbstractTest {
 
-    protected CLI cli;
+    protected static CLI cli;
 
-    @Before
-    public void init() throws UnknownHostException {
+    @BeforeClass
+    public static void initSubsystem() throws UnknownHostException {
         cli = CLI.newInstance();
         cli.connect();
         System.out.println("connected");
-        cmdIgnore("/subsystem=elytron-testing:remove{allow-resource-service-restart=true}");
-        cmdIgnore("/extension=org.wildfly.security.elytron-test:remove{allow-resource-service-restart=true}");
-        cmdAssert("/extension=org.wildfly.security.elytron-test:add");
-        cmdAssert("/subsystem=elytron-testing:add");
-        cmdIgnore("/path=elytron.testing.resources/:add(path=\"" + getClass().getResource("/").getFile() + "\")");
-        cmdIgnore("/path=elytron.testing.resources/:write-attribute(name=path,value=\"" + getClass().getResource("/").getFile() + "\")");
+        cmdIgnoreDuplicate("/extension=org.wildfly.security.elytron-test:add");
+        cmdIgnoreNotFound("/subsystem=elytron-testing:remove{allow-resource-service-restart=true}");
+        cmdIgnoreDuplicate("/subsystem=elytron-testing:add");
+        cmdIgnoreDuplicate("/extension=org.wildfly.extension.elytron:add");
+        cmdIgnoreDuplicate("/subsystem=elytron:add");
+        cmdIgnoreDuplicate("/path=elytron.testing.resources/:add(path=\"" + AbstractTest.class.getResource("/").getFile() + "\")");
+        cmdAssert("/path=elytron.testing.resources/:write-attribute(name=path,value=\"" + AbstractTest.class.getResource("/").getFile() + "\")");
     }
 
-    @After
-    public void destroy() throws IOException {
+    @AfterClass
+    public static void destroy() throws IOException {
         cli.disconnect();
         System.out.println("disconnected");
     }
 
-    protected ModelNode cmdAssert(String command) {
+    protected static ModelNode cmdAssert(String command) {
         ModelNode response = cli.cmd(command).getResponse();
         if (!response.get(OUTCOME).asString().equals(SUCCESS)) {
             Assert.fail(command + response.toJSONString(false));
@@ -68,9 +71,25 @@ public class AbstractTest {
         return response.get(RESULT);
     }
 
-    protected ModelNode cmdIgnore(String command) {
+    protected static ModelNode cmdIgnore(String command) {
         ModelNode response = cli.cmd(command).getResponse();
         if (!response.get(OUTCOME).asString().equals(SUCCESS)) {
+            System.out.println(command + response.toJSONString(false));
+        }
+        return response.get(RESULT);
+    }
+
+    protected static ModelNode cmdIgnoreDuplicate(String command) {
+        ModelNode response = cli.cmd(command).getResponse();
+        if (!response.get(OUTCOME).asString().equals(SUCCESS) && !response.get(FAILURE_DESCRIPTION).asString().contains("Duplicate resource")) {
+            System.out.println(command + response.toJSONString(false));
+        }
+        return response.get(RESULT);
+    }
+
+    protected static ModelNode cmdIgnoreNotFound(String command) {
+        ModelNode response = cli.cmd(command).getResponse();
+        if (!response.get(OUTCOME).asString().equals(SUCCESS) && !response.get(FAILURE_DESCRIPTION).asString().contains("not found")) {
             System.out.println(command + response.toJSONString(false));
         }
         return response.get(RESULT);

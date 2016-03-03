@@ -38,7 +38,7 @@
 
         <version.wildfly.core>2.0.8.Final-SNAPSHOT</version.wildfly.core>
         <version.wildfly.controller>2.0.8.Final-SNAPSHOT</version.wildfly.controller>
-        <version.elytron-subsystem>1.0.0.Alpha6-SNAPSHOT</version.elytron-subsystem>
+        <version.elytron-subsystem>1.0.0.Alpha7-SNAPSHOT</version.elytron-subsystem>
         <version.wildfly-elytron>1.1.0.Beta4-SNAPSHOT</version.wildfly-elytron>
         <version.org.jboss.msc.jboss-msc>1.2.6.Final</version.org.jboss.msc.jboss-msc>
         <version.org.wildfly.common>1.1.0.Final</version.org.wildfly.common>
@@ -88,8 +88,9 @@
                             <value>${jboss.home}</value>
                         </property>
                     </systemProperties>
-                    <includes>
-                        <include>**/*TestCase.java</include>
+                    <includes><!-- on build run only offline tests -->
+                        <include>org/wildfly/security/testing/extension/**/*Test.java</include>
+                        <include>org/wildfly/security/testing/extension/**/*TestCase.java</include>
                     </includes>
                     <forkMode>once</forkMode>
                 </configuration>
